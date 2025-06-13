@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Network Packet Analyzer - Educational Tool</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            color: white;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .ethical-notice {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 30px;
+            border-left: 5px solid #e74c3c;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .ethical-notice h3 {
+            color: #e74c3c;
+            margin-bottom: 10px;
+        }
+
+        .control-panel {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-start {
+            background: linear-gradient(45deg, #27ae60, #2ecc71);
+            color: white;
+        }
+
+        .btn-stop {
+            background: linear-gradient(45deg, #e74c3c, #c0392b);
+            color: white;
+        }
+
+        .btn-clear {
+            background: linear-gradient(45deg, #3498db, #2980b9);
+            color: white;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .filter-section {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .filter-group label {
+            font-weight: 600;
+            color: #555;
+            font-size: 12px;
+            text-transform: uppercase;
+        }
+
+        .filter-group select, .filter-group input {
+            padding: 8px 12px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: border-color 0.3s ease;
+        }
+
+        .filter-group select:focus, .filter-group input:focus {
+            outline: none;
+            border-color: #3498db;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .stat-card {
+            background: linear-gradient(45deg, #f8f9fa, #e9ecef);
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            border: 2px solid #dee2e6;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #6c757d;
+            text-transform: uppercase;
+            margin-top: 5px;
+        }
+
+        .packet-display {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            margin-bottom: 30px;
+        }
+
+        .packet-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+        }
+
+        .packet-table th {
+            background: linear-gradient(45deg, #34495e, #2c3e50);
+            color: white;
+            padding: 12px 8px;
+            text-align: left;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 11px;
+            letter-spacing: 0.5px;
+        }
+
+        .packet-table td {
+            padding: 10px 8px;
+            border-bottom: 1px solid #eee;
+            vertical-align: top;
+        }
+
+        .packet-table tr:hover {
+            background-color: #f8f9fa;
+            cursor: pointer;
+        }
+
+        .protocol-tcp { color: #27ae60; font-weight: bold; }
+        .protocol-udp { color: #3498db; font-weight: bold; }
+        .protocol-http { color: #e67e22; font-weight: bold; }
+        .protocol-https { color: #8e44ad; font-weight: bold; }
+        .protocol-dns { color: #f39c12; font-weight: bold; }
+
+        .packet-details {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border-left: 4px solid #3498db;
+            display: none;
+        }
+
+        .packet-details h4 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+            font-size: 16px;
+        }
+
+        .detail-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+        }
+
+        .detail-item {
+            background: white;
+            padding: 12px;
+            border-radius: 6px;
+            border: 1px solid #dee2e6;
+        }
+
+        .detail-label {
+            font-weight: 600;
+            color: #495057;
+            font-size: 12px;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+        }
+
+        .detail-value {
+            font-family: 'Courier New', monospace;
+            color: #212529;
+            word-break: break-all;
+        }
+
+        .payload-section {
+            margin-top: 15px;
+            padding: 15px;
+            background: #2c3e50;
+            color: #ecf0f1;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            line-height: 1.4;
+            overflow-x: auto;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        .status-active { background-color: #27ae60; }
+        .status-inactive { background-color: #95a5a6; }
+
+        .educational-content {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .educational-content h3 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+        }
+
+        .educational-content ul {
+            margin-left: 20px;
+        }
+
+        .educational-content li {
+            margin-bottom: 8px;
+            line-height: 1.6;
+        }
+
+        @media (max-width: 768px) {
+            .controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .filter-section {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .packet-table {
+                font-size: 11px;
+            }
+            
+            .packet-table th,
+            .packet-table td {
+                padding: 6px 4px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔍 Network Packet Analyzer</h1>
+            <p>Educational Network Security Tool</p>
+        </div>
+
+        <div class="ethical-notice">
+            <h3>⚠️ Ethical Use Notice</h3>
+            <p><strong>This tool is designed for educational purposes only.</strong> Network packet analysis should only be performed on networks you own or have explicit permission to monitor. Unauthorized network monitoring may violate laws and regulations in your jurisdiction. Always ensure you have proper authorization before analyzing network traffic.</p>
+        </div>
+
+        <div class="control-panel">
+            <h3>Control Panel</h3>
+            <div class="controls">
+                <button class="btn btn-start" onclick="startCapture()">
+                    <span class="status-indicator status-inactive" id="statusIndicator"></span>
+                    Start Capture
+                </button>
+                <button class="btn btn-stop" onclick="stopCapture()">Stop Capture</button>
+                <button class="btn btn-clear" onclick="clearPackets()">Clear Data</button>
+            </div>
+
+            <div class="filter-section">
+                <div class="filter-group">
+                    <label>Protocol Filter</label>
+                    <select id="protocolFilter" onchange="applyFilters()">
+                        <option value="">All Protocols</option>
+                        <option value="TCP">TCP</option>
+                        <option value="UDP">UDP</option>
+                        <option value="HTTP">HTTP</option>
+                        <option value="HTTPS">HTTPS</option>
+                        <option value="DNS">DNS</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>Source IP Filter</label>
+                    <input type="text" id="sourceFilter" placeholder="e.g., 192.168.1.1" onchange="applyFilters()">
+                </div>
+                <div class="filter-group">
+                    <label>Destination IP Filter</label>
+                    <input type="text" id="destFilter" placeholder="e.g., 8.8.8.8" onchange="applyFilters()">
+                </div>
+                <div class="filter-group">
+                    <label>Port Filter</label>
+                    <input type="number" id="portFilter" placeholder="e.g., 80" onchange="applyFilters()">
+                </div>
+            </div>
+
+            <div class="stats">
+                <div class="stat-card">
+                    <div class="stat-value" id="totalPackets">0</div>
+                    <div class="stat-label">Total Packets</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="tcpPackets">0</div>
+                    <div class="stat-label">TCP Packets</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="udpPackets">0</div>
+                    <div class="stat-label">UDP Packets</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="dataTransferred">0 KB</div>
+                    <div class="stat-label">Data Transferred</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="packet-display">
+            <h3>📦 Captured Packets</h3>
+            <table class="packet-table">
+                <thead>
+                    <tr>
+                        <th>Time</th>
+                        <th>Source IP</th>
+                        <th>Dest IP</th>
+                        <th>Protocol</th>
+                        <th>Src Port</th>
+                        <th>Dest Port</th>
+                        <th>Length</th>
+                        <th>Info</th>
+                    </tr>
+                </thead>
+                <tbody id="packetTableBody">
+                </tbody>
+            </table>
+
+            <div class="packet-details" id="packetDetails">
+                <h4>📋 Packet Details</h4>
+                <div class="detail-grid" id="detailGrid">
+                </div>
+                <div class="payload-section" id="payloadSection">
+                </div>
+            </div>
+        </div>
+
+        <div class="educational-content">
+            <h3>📚 Educational Information</h3>
+            <h4>Understanding Network Packets:</h4>
+            <ul>
+                <li><strong>IP Address:</strong> Unique identifier for devices on a network (e.g., 192.168.1.1)</li>
+                <li><strong>TCP (Transmission Control Protocol):</strong> Reliable, connection-oriented protocol for data transmission</li>
+                <li><strong>UDP (User Datagram Protocol):</strong> Faster, connectionless protocol for real-time applications</li>
+                <li><strong>HTTP/HTTPS:</strong> Protocols for web traffic (HTTP is unencrypted, HTTPS is encrypted)</li>
+                <li><strong>DNS (Domain Name System):</strong> Translates domain names to IP addresses</li>
+                <li><strong>Ports:</strong> Endpoints for network connections (e.g., port 80 for HTTP, port 443 for HTTPS)</li>
+            </ul>
+            
+            <h4>Ethical Considerations:</h4>
+            <ul>
+                <li>Only analyze traffic on networks you own or have explicit permission to monitor</li>
+                <li>Respect privacy and confidentiality of network users</li>
+                <li>Follow your organization's security policies and procedures</li>
+                <li>Use packet analysis for legitimate security, troubleshooting, or educational purposes</li>
+                <li>Be aware of legal requirements and regulations in your jurisdiction</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        let captureActive = false;
+        let captureInterval;
+        let packets = [];
+        let packetId = 0;
+        let stats = {
+            total: 0,
+            tcp: 0,
+            udp: 0,
+            dataSize: 0
+        };
+
+        // Sample network data for simulation
+        const sampleIPs = [
+            '192.168.1.1', '192.168.1.100', '192.168.1.101', '192.168.1.102',
+            '8.8.8.8', '1.1.1.1', '208.67.222.222', '74.125.224.72',
+            '151.101.1.140', '13.107.42.14', '104.16.132.229'
+        ];
+
+        const sampleDomains = [
+            'google.com', 'facebook.com', 'amazon.com', 'microsoft.com',
+            'apple.com', 'netflix.com', 'twitter.com', 'youtube.com'
+        ];
+
+        const protocols = [
+            { name: 'TCP', ports: [80, 443, 22, 23, 25, 110, 143, 993, 995] },
+            { name: 'UDP', ports: [53, 67, 68, 123, 161, 162] },
+            { name: 'HTTP', ports: [80, 8080] },
+            { name: 'HTTPS', ports: [443, 8443] },
+            { name: 'DNS', ports: [53] }
+        ];
+
+        function generateRandomPacket() {
+            const protocol = protocols[Math.floor(Math.random() * protocols.length)];
+            const sourceIP = sampleIPs[Math.floor(Math.random() * sampleIPs.length)];
+            const destIP = sampleIPs[Math.floor(Math.random() * sampleIPs.length)];
+            const sourcePort = Math.floor(Math.random() * 65535) + 1;
+            const destPort = protocol.ports[Math.floor(Math.random() * protocol.ports.length)];
+            const length = Math.floor(Math.random() * 1500) + 64;
+            
+            let info = '';
+            switch(protocol.name) {
+                case 'HTTP':
+                    info = `GET /${sampleDomains[Math.floor(Math.random() * sampleDomains.length)]}/`;
+                    break;
+                case 'HTTPS':
+                    info = `TLS Application Data`;
+                    break;
+                case 'DNS':
+                    info = `Query ${sampleDomains[Math.floor(Math.random() * sampleDomains.length)]}`;
+                    break;
+                case 'TCP':
+                    const flags = ['SYN', 'ACK', 'FIN', 'PSH'];
+                    info = `[${flags[Math.floor(Math.random() * flags.length)]}] Seq=${Math.floor(Math.random() * 1000000)}`;
+                    break;
+                case 'UDP':
+                    info = `Len=${length}`;
+                    break;
+            }
+
+            return {
+                id: ++packetId,
+                timestamp: new Date().toLocaleTimeString(),
+                sourceIP: sourceIP,
+                destIP: destIP,
+                protocol: protocol.name,
+                sourcePort: sourcePort,
+                destPort: destPort,
+                length: length,
+                info: info,
+                payload: generatePayload(protocol.name, length)
+            };
+        }
+
+        function generatePayload(protocol, length) {
+            let payload = '';
+            
+            switch(protocol) {
+                case 'HTTP':
+                    payload = `GET / HTTP/1.1\r\nHost: example.com\r\nUser-Agent: Mozilla/5.0\r\nAccept: text/html\r\n\r\n`;
+                    break;
+                case 'HTTPS':
+                    payload = generateHexDump(length);
+                    break;
+                case 'DNS':
+                    payload = `DNS Query: Type A, Class IN, Name: example.com`;
+                    break;
+                default:
+                    payload = generateHexDump(Math.min(length, 200));
+            }
+            
+            return payload;
+        }
+
+        function generateHexDump(length) {
+            let hex = '';
+            for (let i = 0; i < Math.min(length, 200); i += 16) {
+                let line = i.toString(16).padStart(4, '0') + ': ';
+                for (let j = 0; j < 16 && i + j < length; j++) {
+                    line += Math.floor(Math.random() * 256).toString(16).padStart(2, '0') + ' ';
+                }
+                hex += line + '\n';
+            }
+            return hex;
+        }
+
+        function startCapture() {
+            if (captureActive) return;
+            
+            captureActive = true;
+            document.getElementById('statusIndicator').className = 'status-indicator status-active';
+            
+            captureInterval = setInterval(() => {
+                if (Math.random() > 0.3) { // 70% chance to generate a packet
+                    const packet = generateRandomPacket();
+                    packets.push(packet);
+                    updateStats(packet);
+                    displayPacket(packet);
+                }
+            }, Math.random() * 2000 + 500); // Random interval between 0.5-2.5 seconds
+        }
+
+        function stopCapture() {
+            captureActive = false;
+            document.getElementById('statusIndicator').className = 'status-indicator status-inactive';
+            
+            if (captureInterval) {
+                clearInterval(captureInterval);
+            }
+        }
+
+        function clearPackets() {
+            packets = [];
+            packetId = 0;
+            stats = { total: 0, tcp: 0, udp: 0, dataSize: 0 };
+            document.getElementById('packetTableBody').innerHTML = '';
+            document.getElementById('packetDetails').style.display = 'none';
+            updateStatsDisplay();
+        }
+
+        function updateStats(packet) {
+            stats.total++;
+            stats.dataSize += packet.length;
+            
+            if (packet.protocol === 'TCP' || packet.protocol === 'HTTP' || packet.protocol === 'HTTPS') {
+                stats.tcp++;
+            } else if (packet.protocol === 'UDP' || packet.protocol === 'DNS') {
+                stats.udp++;
+            }
+            
+            updateStatsDisplay();
+        }
+
+        function updateStatsDisplay() {
+            document.getElementById('totalPackets').textContent = stats.total;
+            document.getElementById('tcpPackets').textContent = stats.tcp;
+            document.getElementById('udpPackets').textContent = stats.udp;
+            document.getElementById('dataTransferred').textContent = (stats.dataSize / 1024).toFixed(1) + ' KB';
+        }
+
+        function displayPacket(packet) {
+            const tbody = document.getElementById('packetTableBody');
+            const row = tbody.insertRow(0); // Insert at top
+            
+            row.onclick = () => showPacketDetails(packet);
+            
+            row.innerHTML = `
+                <td>${packet.timestamp}</td>
+                <td>${packet.sourceIP}</td>
+                <td>${packet.destIP}</td>
+                <td><span class="protocol-${packet.protocol.toLowerCase()}">${packet.protocol}</span></td>
+                <td>${packet.sourcePort}</td>
+                <td>${packet.destPort}</td>
+                <td>${packet.length}</td>
+                <td>${packet.info}</td>
+            `;
+            
+            // Keep only last 100 packets in display
+            while (tbody.rows.length > 100) {
+                tbody.deleteRow(tbody.rows.length - 1);
+            }
+        }
+
+        function showPacketDetails(packet) {
+            const detailsDiv = document.getElementById('packetDetails');
+            const detailGrid = document.getElementById('detailGrid');
+            const payloadSection = document.getElementById('payloadSection');
+            
+            detailGrid.innerHTML = `
+                <div class="detail-item">
+                    <div class="detail-label">Packet ID</div>
+                    <div class="detail-value">${packet.id}</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Timestamp</div>
+                    <div class="detail-value">${packet.timestamp}</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Source IP Address</div>
+                    <div class="detail-value">${packet.sourceIP}</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Destination IP Address</div>
+                    <div class="detail-value">${packet.destIP}</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Protocol</div>
+                    <div class="detail-value">${packet.protocol}</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Source Port</div>
+                    <div class="detail-value">${packet.sourcePort}</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Destination Port</div>
+                    <div class="detail-value">${packet.destPort}</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Packet Length</div>
+                    <div class="detail-value">${packet.length} bytes</div>
+                </div>
+            `;
+            
+            payloadSection.innerHTML = `<strong>Payload Data:</strong><br><br>${packet.payload}`;
+            detailsDiv.style.display = 'block';
+            
+            // Smooth scroll to details
+            detailsDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        function applyFilters() {
+            const protocolFilter = document.getElementById('protocolFilter').value;
+            const sourceFilter = document.getElementById('sourceFilter').value;
+            const destFilter = document.getElementById('destFilter').value;
+            const portFilter = document.getElementById('portFilter').value;
+            
+            const tbody = document.getElementById('packetTableBody');
+            const rows = tbody.getElementsByTagName('tr');
+            
+            for (let i = 0; i < rows.length; i++) {
+                const row = rows[i];
+                const cells = row.getElementsByTagName('td');
+                
+                if (cells.length === 0) continue;
+                
+                const sourceIP = cells[1].textContent;
+                const destIP = cells[2].textContent;
+                const protocol = cells[3].textContent;
+                const sourcePort = cells[4].textContent;
+                const destPort = cells[5].textContent;
+                
+                let show = true;
+                
+                if (protocolFilter && !protocol.includes(protocolFilter)) show = false;
+                if (sourceFilter && !sourceIP.includes(sourceFilter)) show = false;
+                if (destFilter && !destIP.includes(destFilter)) show = false;
+                if (portFilter && !sourcePort.includes(portFilter) && !destPort.includes(portFilter)) show = false;
+                
+                row.style.display = show ? '' : 'none';
+            }
+        }
+
+        // Initialize the application
+        document.addEventListener('DOMContentLoaded', function() {
+            updateStatsDisplay();
+        });
+    </script>
+</body>
+</html>
