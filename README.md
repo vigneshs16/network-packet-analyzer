@@ -214,13 +214,4 @@ The authors are not responsible for any misuse of this educational tool.
 - Designed for educational institutions and self-learners
 - Built with modern web technologies for accessibility
 
-## 📞 Support
-
-If you have questions or need help:
-
-- Open an issue on GitHub
-- Check the educational content within the application
-- Refer to networking fundamentals documentation
-
-*Remember: Always use this tool ethically and legally. Network analysis should only be performed on networks you own or have explicit permission to monitor.*
 
